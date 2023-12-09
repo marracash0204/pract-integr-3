@@ -44,11 +44,10 @@ export class productsManager {
       throw error;
     }
   }
-  
 
   async getProductById(id) {
     try {
-      const productsById = await productsRepository.getProductByIdRepo(id)
+      const productsById = await productsRepository.getProductByIdRepo(id);
       return productsById;
     } catch (error) {
       logger.error("Error al obtener el producto por ID:", error);

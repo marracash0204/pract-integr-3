@@ -54,15 +54,13 @@ router.get("/products", async (req, res) => {
     );
     const products = productsResult.docs;
     const totalPages = productsResult.totalPages;
-    
 
-   return res.render("product/products", {
+    return res.render("product/products", {
       user,
       products,
       totalPages,
       currentPage: page,
     });
-    
   } catch (error) {
     logger.error("Error al obtener productos paginados:", error);
     res.status(500).send("Error al obtener productos");
@@ -84,7 +82,6 @@ router.get("/addproduct", isAdminOrPremium, async (req, res) => {
   }
 });
 
-
 router.get("/modifyProduct", isAdminOrPremium, async (req, res) => {
   try {
     const allProducts = await productManager.getAllproduct();
@@ -101,8 +98,9 @@ router.get("/profile", async (req, res) => {
       const user = req.user;
       const userProfile = await cartsManager.getUserProfile(user);
       const cartId = user.cart._id;
+      const userId = user._id;
 
-      return res.render("user/profile", { user: userProfile, cartId });
+      return res.render("user/profile", { user: userProfile, cartId, userId });
     }
 
     if (req.session && req.session.email) {
@@ -119,21 +117,24 @@ router.get("/profile", async (req, res) => {
   }
 });
 
-router.get('/recover-request', (req, res) => {
-  res.render('auth/recoverRequest');
+router.get("/recover-request", (req, res) => {
+  res.render("auth/recoverRequest");
 });
 
 router.get("/recover-reset/:token", async (req, res) => {
   const { token } = req.params;
   console.log("usuario con token:", token);
   const user = await userModel.findOne({ resetToken: token });
-console.log("usuario encontrado con los datos:", user);
-  if (!user || !user.resetTokenExpiration || user.resetTokenExpiration <= Date.now()) {
-
-    return res.render("error", {tokenExpired: true});
+  console.log("usuario encontrado con los datos:", user);
+  if (
+    !user ||
+    !user.resetTokenExpiration ||
+    user.resetTokenExpiration <= Date.now()
+  ) {
+    return res.render("error", { tokenExpired: true });
   }
 
-  res.render("auth/recoverReset", { token }); 
+  res.render("auth/recoverReset", { token });
 });
 
 router.get("/signup", async (req, res) => {
@@ -182,16 +183,15 @@ router.get(
   }
 );
 
-router.get('/mockingProducts', (req, res) => {
+router.get("/mockingProducts", (req, res) => {
   try {
-    const quantity = 100; 
+    const quantity = 100;
     const products = generateMockProducts(quantity);
-    res.render("product/faker", {products});
+    res.render("product/faker", { products });
   } catch (error) {
-    logger.error('Error al generar productos ficticios:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    logger.error("Error al generar productos ficticios:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
-
 
 export default router;

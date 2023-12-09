@@ -2,6 +2,8 @@
 <h2>No hay productos que eliminar en el carrito</h2>
 {{else if noProducts}}
 <h2>No fue posible hacer su ticket, no hay productos agregados al carrito</h2>
+{{else if sameProduct}}
+<h2>No puedes agregar tu propio producto al carrito.</h2>
 {{else if emailNotFound}}
 <h2>Correo no encontrado en nuestros registros. Intenta nuevamente.</h2>
 <form action="/recover-request" method="GET">
@@ -14,7 +16,8 @@
 </form>
 
 {{else if notSamePass}}
-<h2>Las contraseñas no coinciden, intentelo nuevamente. </h2><form action="/recover-request" method="GET">
+<h2>Las contraseñas no coinciden, intentelo nuevamente. </h2>
+<form action="/recover-request" method="GET">
   <button type="submit">Regresar a la página de recuperación</button>
 </form>
 {{else if tokenExpired}}

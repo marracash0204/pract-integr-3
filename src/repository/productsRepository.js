@@ -12,7 +12,7 @@ export class productsRepo {
       productModel.price,
       productModel.code,
       productModel.stock,
-      productModel.owner 
+      productModel.owner
     );
   }
 
@@ -106,7 +106,7 @@ export class productsRepo {
         price,
         code,
         stock,
-        owner: user || "admin"
+        owner: user ? user._id : "owner",
       });
       return this.mapToDTO(addproduct);
     } catch (error) {
@@ -114,10 +114,13 @@ export class productsRepo {
       throw error;
     }
   }
-  
+
   async getProductByIdRepo(id) {
     try {
-      const productById = await productsModel.findById(id).populate('owner').lean();
+      const productById = await productsModel
+        .findById(id)
+        .populate("owner")
+        .lean();
 
       if (!productById) {
         throw createError("PRODUCT_NOT_FOUND");

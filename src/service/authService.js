@@ -4,7 +4,8 @@ import {
   resetPassword,
   getUserByToken,
   isTokenExpired,
-  getUserByEmail,
+  toggleUserRoleRepo,
+  getUserById,
 } from "../repository/authRepository.js";
 
 const generateTokenService = async () => {
@@ -51,7 +52,7 @@ const getUserByTokenService = async (token) => {
 
 const isTokenExpiredService = async (token) => {
   try {
-    const user = isTokenExpired(token);
+    const user = await isTokenExpired(token);
 
     return !user;
   } catch (error) {
@@ -60,11 +61,30 @@ const isTokenExpiredService = async (token) => {
   }
 };
 
-async function getUserByEmailService(email) {
+async function changeUserRole(userId, newRole) {
   try {
-    return await getUserByEmail(email);
+    const result = await toggleUserRoleRepo(userId, newRole);
+
+    if (result.success) {
+      console.log("Rol cambiado con éxito:", result.message);
+      return true;
+    } else {
+      console.error("Error al cambiar de rol:", result.message);
+      return false;
+    }
   } catch (error) {
-    console.error("No se pudo obtener email de usuario");
+    console.error("Error al cambiar de rol:", error);
+    throw error;
+  }
+}
+
+async function getUserByIdService(userId) {
+  try {
+    const user = await getUserById(userId);
+
+    return user;
+  } catch (error) {
+    console.error("Error al obtener el usuario:", error);
     throw error;
   }
 }
@@ -75,5 +95,6 @@ export {
   resetPasswordService,
   getUserByTokenService,
   isTokenExpiredService,
-  getUserByEmailService,
+  changeUserRole,
+  getUserByIdService,
 };

@@ -1,0 +1,20 @@
+<h1>Cambiar Rol</h1>
+<strong>Nombre: </strong>
+<h2>{{user.first_name}} {{user.last_name}}</h2>
+<strong>Email: </strong>
+<h2>{{user.email}}</h2>
+<strong>Rol Actual: </strong>
+<h2>{{user.rol}}</h2><br>
+
+<form action="/api/users/premium/{{user._id}}" method="post">
+    <label for="newRole">Selecciona un nuevo rol:</label>
+    <select name="newRole" id="newRole">
+        <option value="usuario" {{#if (eq user.rol "usuario" )}}selected{{/if}}>Usuario</option>
+        <option value="premium" {{#if (eq user.rol "premium" )}}selected{{/if}}>Premium</option>
+    </select>
+    <button type="submit">Cambiar Rol</button>
+</form>
+
+<form action="/profile" method="get">
+    <button type="submit">Regresar al profile</button>
+</form>

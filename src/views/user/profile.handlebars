@@ -1,5 +1,5 @@
 <h2>
-  Hola {{{user.firstName}}} {{{user.lastName}}}
+  Hola {{user.first_name}} {{user.last_name}}
 </h2>
 
 <p>
@@ -7,6 +7,10 @@
   <strong>Edad:</strong> {{user.age}}<br />
   <strong>Rol:</strong> {{user.rol}}
 </p>
+
+<form action="/api/users/premium/{{userId}}" method="GET">
+  <button type="submit">Cambiar de rol</button>
+</form>
 
 <h3>Carrito</h3>
 {{#if user.cart.products}}

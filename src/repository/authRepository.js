@@ -104,12 +104,42 @@ const isTokenExpired = async (token) => {
   }
 };
 
-async function getUserByEmail(email) {
+async function toggleUserRoleRepo(userId, newRol) {
   try {
-    return await userModel.findOne({ email: email });
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: { rol: newRol } },
+      { new: true }
+    );
+
+    if (!user) {
+      return { success: false, message: "Usuario no encontrado." };
+    }
+
+    return {
+      success: true,
+      message: "Rol de usuario actualizado con éxito.",
+      newRol: user.rol,
+    };
   } catch (error) {
-    console.error("Error al obtener email de usuario");
-    throw error;
+    console.error("Error al cambiar el rol de usuario:", error);
+    return {
+      success: false,
+      message: "Error interno al cambiar el rol de usuario.",
+    };
+  }
+}
+
+async function getUserById(userId) {
+  try {
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return { success: false, message: "usuario no encontrado" };
+    }
+    return user;
+  } catch (error) {
+    console.error("error al obtener el id");
+    return { success: false, message: "Error al obtener el id de usuario" };
   }
 }
 
@@ -119,5 +149,6 @@ export {
   generateAndStoreToken,
   getUserByToken,
   isTokenExpired,
-  getUserByEmail,
+  toggleUserRoleRepo,
+  getUserById,
 };

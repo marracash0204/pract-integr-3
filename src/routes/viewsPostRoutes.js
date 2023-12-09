@@ -2,11 +2,15 @@ import { Router } from "express";
 import { cartManager } from "../service/cartsManager.js";
 import { ticketManager } from "../service/ticketManager.js";
 import { productsManager } from "../service/productsManager.js";
-import { isAdminOrPremium } from "../middlewares/autMiddleware.js";
+import {
+  isAdminOrPremium,
+  isUserOrPremium,
+} from "../middlewares/autMiddleware.js";
 import emailService from "../service/emailService.js";
 import { createError } from "../service/utilities/errorHandler.js";
 import logger from "../service/utilities/logger.js";
-import {getUserByEmailService} from '../service/authService.js'
+import { changeUserRole } from "../service/authService.js";
+import { getUserById } from "../repository/authRepository.js";
 
 const cartsManager = new cartManager();
 const productManager = new productsManager();
@@ -16,40 +20,33 @@ const router = Router();
 router.post("/addproduct", isAdminOrPremium, async (req, res) => {
   try {
     const { title, description, price, code, stock } = req.body;
-    const owner = req.user ? req.user.email : null;
 
     if (!title || !price || !code || !stock) {
       throw createError("EMPTY_FIELDS");
     }
 
-    if (req.user && req.user.rol === "premium") {
-      const ownerEmail = req.user.email;
+    const product = await productManager.addProduct(
+      title,
+      description,
+      price,
+      code,
+      stock,
+      req.user
+    );
 
-      const product = await productManager.addProduct(
-        title,
-        description,
-        price,
-        code,
-        stock,
-        req.user
-      );
-
-      const productId = product.id;
-      res.redirect(`/addproduct`);
-    } else {
-      throw createError("NOT_PREMIUM_USER");
-    }
+    const productId = product.id;
+    res.redirect(`/addproduct`);
   } catch (error) {
     logger.error("Error al agregar o modificar un producto:", error);
     res.status(500).send("Error al agregar o modificar un producto");
   }
 });
 
-
 router.post("/add-to-cart/:productId", async (req, res) => {
   try {
     const productId = req.params.productId;
     const cartId = req.session.cartId;
+    const user = req.user;
 
     if (!cartId) {
       const newCart = await cartsManager.createCart();
@@ -63,10 +60,20 @@ router.post("/add-to-cart/:productId", async (req, res) => {
       }
     }
 
+    const product = await productManager.getProductById(productId);
+
+    if (
+      user.rol === "premium" &&
+      product.owner._id.toString() === user._id.toString()
+    ) {
+      return res.render("error", { sameProduct: true });
+    }
+
     const cartAdd = await cartsManager.addProductToCart(
       req.session.cartId,
       productId
     );
+
     if (cartAdd !== null) {
       return res.redirect("/products");
     } else {
@@ -75,6 +82,42 @@ router.post("/add-to-cart/:productId", async (req, res) => {
   } catch (error) {
     logger.error("Error al agregar producto al carrito:", error);
     return res.status(500).send("Error al agregar producto al carrito");
+  }
+});
+
+router.post("/api/users/premium/:uid", isUserOrPremium, async (req, res) => {
+  try {
+    const userId = req.params.uid;
+    const newRole = req.body.newRole;
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado." });
+    }
+
+    if (user.rol === newRole) {
+      return res
+        .status(400)
+        .json({ message: "El usuario ya tiene asignado el rol seleccionado." });
+    }
+
+    const success = await changeUserRole(userId, newRole);
+
+    if (success) {
+      return res
+        .status(200)
+        .json({ message: "Rol de usuario actualizado con éxito." });
+    } else {
+      return res
+        .status(404)
+        .json({ message: "No se pudo actualizar el rol del usuario." });
+    }
+  } catch (error) {
+    console.error("Error al cambiar el rol de usuario:", error);
+    res
+      .status(500)
+      .json({ message: "Error interno al cambiar el rol de usuario." });
   }
 });
 
@@ -175,42 +218,46 @@ router.post("/modify-product/:prodId", isAdminOrPremium, async (req, res) => {
   }
 });
 
-router.post("/delete-product-stock/:prodId", isAdminOrPremium, async (req, res) => {
-  try {
-    const productId = req.params.prodId;
+router.post(
+  "/delete-product-stock/:prodId",
+  isAdminOrPremium,
+  async (req, res) => {
+    try {
+      const productId = req.params.prodId;
+      const product = await productManager.getProductById(productId);
+      const user = req.user;
 
-    const product = await productManager.getProductById(productId);
-    console.log(product);
+      if (
+        user.rol === "admin" ||
+        (user.rol === "premium" &&
+          product.owner._id.toString() === user._id.toString())
+      ) {
+        const result = await productManager.deleteProduct(productId);
 
-    if (!product) {
-      return res.status(404).send("Producto no encontrado");
-    }
-
-    const user = await getUserByEmailService(req.user.email);
-    console.log('usuario email:',user);
-
-    if (!user) {
-      return res.status(404).send("Usuario no encontrado");
-    }
-
-    if ((user.role === "premium" && product.owner === user.email) || user.role === "admin") {
-      const result = await productManager.deleteProduct(productId);
-
-      if (result.success) {
-        res.redirect("/modifyProduct");
+        if (result.success) {
+          res.redirect("/modifyProduct");
+        } else {
+          res.status(404).send("No se pudo eliminar el producto");
+        }
       } else {
-        res.status(404).send("No se pudo eliminar el producto");
+        console.log(
+          "No tienes permisos. User Role:",
+          user.rol,
+          "Product Owner Id:",
+          product.owner._id.toString(),
+          "User Id:",
+          user._id.toString()
+        );
+        return res
+          .status(403)
+          .send("No tienes permisos para eliminar este producto");
       }
-    } else {
-      return res.status(403).send("No tienes permisos para eliminar este producto");
+    } catch (error) {
+      logger.error("Error al eliminar un producto:", error);
+      res.status(500).send("Error al eliminar un producto");
     }
-  } catch (error) {
-    logger.error("Error al eliminar un producto:", error);
-    res.status(500).send("Error al eliminar un producto");
   }
-});
-
-
+);
 
 router.post("/logout", async (req, res) => {
   try {

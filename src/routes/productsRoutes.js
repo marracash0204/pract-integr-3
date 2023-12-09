@@ -58,7 +58,7 @@ productsRouter.post("/", async (req, res) => {
     newProduct.price,
     newProduct.code,
     newProduct.stock,
-    req.user.email
+    req.user
   );
   res.status(200).send("Producto Agregado correctamente");
 });

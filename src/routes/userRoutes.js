@@ -3,11 +3,29 @@ import { cartManager } from "../service/cartsManager.js";
 import { Router } from "express";
 import passport from "passport";
 import emailService from "../service/emailService.js";
-import { generateAndStoreTokenService, generateTokenService, resetPasswordService, getUserByTokenService, isTokenExpiredService} from "../service/authService.js";
-import bcrypt from 'bcrypt'; 
+import {
+  generateAndStoreTokenService,
+  resetPasswordService,
+  getUserByTokenService,
+  isTokenExpiredService,
+} from "../service/authService.js";
+import bcrypt from "bcrypt";
+import { getUserById } from "../repository/authRepository.js";
+import { isUserOrPremium } from "../middlewares/autMiddleware.js";
 
 const cartsManager = new cartManager();
 const router = Router();
+
+router.get("/users/premium/:uId", isUserOrPremium, async (req, res) => {
+  try {
+    const userId = req.params.uId;
+    const user = await getUserById(userId);
+
+    return res.render("auth/rol", { user });
+  } catch (error) {
+    return error;
+  }
+});
 
 router.post(
   "/signup",
@@ -56,7 +74,7 @@ router.post("/auth/recover-request", async (req, res) => {
     return res.render("error", { emailNotFound: true });
   }
 
-  const token = await generateAndStoreTokenService(email); 
+  const token = await generateAndStoreTokenService(email);
 
   if (token) {
     const resetLink = `http://localhost:3001/recover-reset/${token}`;
@@ -69,20 +87,26 @@ router.post("/auth/recover-request", async (req, res) => {
 
     try {
       await emailService.sendEmail(mailOptions);
-      res.render("auth/recoverRequest", { success: "Se ha enviado un correo con las instrucciones para restablecer tu contraseña." });
+      res.render("auth/recoverRequest", {
+        success:
+          "Se ha enviado un correo con las instrucciones para restablecer tu contraseña.",
+      });
     } catch (error) {
       console.error("Error al enviar el correo electrónico:", error);
-      res.status(500).render("auth/recoverRequest", { error: "Error al enviar el correo de recuperación de contraseña." });
+      res.status(500).render("auth/recoverRequest", {
+        error: "Error al enviar el correo de recuperación de contraseña.",
+      });
     }
   } else {
     console.log("Error al generar y almacenar token.");
-    res.render("auth/recoverRequest", { error: "Error al generar el token. Intenta nuevamente." });
+    res.render("auth/recoverRequest", {
+      error: "Error al generar el token. Intenta nuevamente.",
+    });
   }
 });
 
 router.get("/recover-reset/:token", async (req, res) => {
   const { token } = req.params;
-  
 
   try {
     const isExpired = await isTokenExpiredService(token);
@@ -93,8 +117,13 @@ router.get("/recover-reset/:token", async (req, res) => {
 
     res.render("auth/recoverReset", { token });
   } catch (error) {
-    console.error("Error al validar el token de restablecimiento de contraseña:", error);
-    res.status(500).render("auth/recoverReset", { error: "Error al validar el token de restablecimiento de contraseña." });
+    console.error(
+      "Error al validar el token de restablecimiento de contraseña:",
+      error
+    );
+    res.status(500).render("auth/recoverReset", {
+      error: "Error al validar el token de restablecimiento de contraseña.",
+    });
   }
 });
 
@@ -107,13 +136,19 @@ router.post("/recover-reset/:token", async (req, res) => {
   }
 
   try {
-    const user = await getUserByTokenService(token)
+    const user = await getUserByTokenService(token);
 
     if (!user) {
-      return res.render("auth/recoverReset", { error: "El enlace de restablecimiento de contraseña no es válido o ha expirado. Intenta nuevamente." });
+      return res.render("auth/recoverReset", {
+        error:
+          "El enlace de restablecimiento de contraseña no es válido o ha expirado. Intenta nuevamente.",
+      });
     }
 
-    const isSameAsOldPassword = await bcrypt.compare(newPassword, user.password);
+    const isSameAsOldPassword = await bcrypt.compare(
+      newPassword,
+      user.password
+    );
     if (isSameAsOldPassword) {
       return res.render("error", { sameAsOldPassword: true, token });
     }
@@ -121,16 +156,25 @@ router.post("/recover-reset/:token", async (req, res) => {
     const success = await resetPasswordService(token, newPassword);
 
     if (success) {
-      res.render("auth/recoverReset", { success: "Contraseña restablecida con éxito. Puedes iniciar sesión con tu nueva contraseña." });
+      res.render("auth/recoverReset", {
+        success:
+          "Contraseña restablecida con éxito. Puedes iniciar sesión con tu nueva contraseña.",
+      });
     } else {
-      res.render("auth/recoverReset", { error: "El enlace de restablecimiento de contraseña no es válido o ha expirado. Intenta nuevamente." });
+      res.render("auth/recoverReset", {
+        error:
+          "El enlace de restablecimiento de contraseña no es válido o ha expirado. Intenta nuevamente.",
+      });
     }
   } catch (error) {
-    console.error("Error en el proceso de restablecimiento de contraseña:", error);
-    res.status(500).render("auth/recoverReset", { error: "Error en el proceso de restablecimiento de contraseña." });
+    console.error(
+      "Error en el proceso de restablecimiento de contraseña:",
+      error
+    );
+    res.status(500).render("auth/recoverReset", {
+      error: "Error en el proceso de restablecimiento de contraseña.",
+    });
   }
 });
-
-
 
 export default router;

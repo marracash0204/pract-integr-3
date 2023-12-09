@@ -10,10 +10,10 @@ const productsSchema = mongoose.Schema({
   code: String,
   stock: Number,
   owner: {
-    type: String,
-    ref: 'usuarios', 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "usuarios",
     required: true,
-    default: 'admin',
+    default: "admin",
   },
 });
 productsSchema.plugin(mongoosePaginate);

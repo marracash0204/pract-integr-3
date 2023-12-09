@@ -31,7 +31,7 @@ cartRouter.get("/:cid", async (req, res) => {
     const cartEncounter = await cartsManager.getCartById(cartId);
     res.json(cartEncounter);
   } catch (error) {
-   logger.error("Error al obtener los productos del carrito:", error);
+    logger.error("Error al obtener los productos del carrito:", error);
     res.status(500).send("Error al obtener los productos del carrito");
   }
 });

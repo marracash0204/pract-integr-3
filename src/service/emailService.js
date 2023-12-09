@@ -35,7 +35,9 @@ class EmailService {
     const html = `
       <p>Gracias por tu compra. El total de la compra es $${totalAmount}.</p>
       <ul>
-        ${products.map(product => `<li>${product.name} - ${product.price}</li>`).join('')}
+        ${products
+          .map((product) => `<li>${product.name} - ${product.price}</li>`)
+          .join("")}
       </ul>
     `;
 

@@ -15,7 +15,11 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "carts",
   },
-  rol: { type: String, enum: ["usuario", "admin", "premium"], default: "usuario" }, 
+  rol: {
+    type: String,
+    enum: ["usuario", "admin", "premium"],
+    default: "usuario",
+  },
   githubId: String,
   resetToken: String,
   resetTokenExpiration: Date,

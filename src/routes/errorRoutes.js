@@ -10,7 +10,7 @@ routerError.get("/loggerTest", (req, res) => {
   logger.warning("Mensaje de warning");
   logger.error("Mensaje de error");
   logger.fatal("Mensaje de fatal");
-  res.send('Logs generados.');
+  res.send("Logs generados.");
 });
 
 export default routerError;

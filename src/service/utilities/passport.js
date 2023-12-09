@@ -16,7 +16,14 @@ const initializePassport = () => {
     new LocalStrategy(
       { passReqToCallback: true, usernameField: "email" },
       async (req, username, password, done) => {
-        const { first_name, last_name, age, cart, resetToken, resetTokenExpiration} = req.body;
+        const {
+          first_name,
+          last_name,
+          age,
+          cart,
+          resetToken,
+          resetTokenExpiration,
+        } = req.body;
         try {
           const exists = await userModel
             .findOne({ email: username })
@@ -33,7 +40,7 @@ const initializePassport = () => {
             email: username,
             password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
             cart: null,
-            resetToken: null,  
+            resetToken: null,
             resetTokenExpiration: null,
           });
 
